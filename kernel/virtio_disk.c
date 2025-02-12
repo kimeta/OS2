@@ -160,6 +160,7 @@ virtio_disk_init(int id, char * name)
     if (!transfer_buffer[id]) {
       panic("virtio_disk_init: kalloc of transfer_buffer failed");
     }
+
     memset(transfer_buffer[id], 0, BSIZE);
     initsleeplock(&transfer_buffer[id]->lock, "transfer_buffer");
   }
@@ -309,7 +310,7 @@ virtio_disk_rw(int id, struct buf *b, int write)
 void write_block(int diskn, int blockno, uchar* data) {
     struct buf *b = transfer_buffer[diskn];
 
-    if(!b) printf("NEMA");
+    if(!b) printf(" %d %d ", diskn, blockno);
     b->blockno = blockno;
 
     memmove(b->data, data, BSIZE);

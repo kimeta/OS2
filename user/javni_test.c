@@ -9,19 +9,20 @@ main(int argc, char *argv[])
 {
 //    consputc('a');
 
-  init_raid(RAID1);
+  init_raid(RAID4);
 
   uint disk_num, block_num, block_size;
   info_raid(&block_num, &block_size, &disk_num);
 
   uint blocks = (512 > block_num ? block_num : 512);
-
+  printf("%d, %d, %d ", block_num, block_size, disk_num);
   uchar* blk = malloc(block_size);
   for (uint i = 0; i < blocks; i++) {
     for (uint j = 0; j < block_size; j++) {
       blk[j] = j + i;
     }
     write_raid(i, blk);
+
   }
 
   check_data(blocks, blk, block_size);
@@ -31,7 +32,7 @@ main(int argc, char *argv[])
   check_data(blocks, blk, block_size);
 
   disk_repaired_raid(2);
-
+  printf("PROSAO");
   check_data(blocks, blk, block_size);
 
   free(blk);
