@@ -109,6 +109,22 @@ int sys_read_raid_impl(int blkn, uchar* data){
             read_block(diskNum, blkNum, data);
             break;
         case RAID5:
+
+            diskNum = (blkn + blkn / RAID_DISK_NUMBER + 1) % (RAID_DISK_NUMBER) + 1;
+            blkNum = blkn / (RAID_DISK_NUMBER - 1);
+            if(raid_data.failed[diskNum]){
+                memset(data, 0, BSIZE);
+                for(int i = 1; i < RAID_DISK_NUMBER + 1; i++){
+                    if(diskNum == i) continue;
+                    uchar temporary_buffer[BSIZE];
+                    read_block(i, blkNum, temporary_buffer);
+                    for(int j = 0; j < BSIZE; j++){
+                        data[j] = data[j] ^ temporary_buffer[j];
+                    }
+                }
+                break;
+            }
+            read_block(diskNum, blkNum, data);
             break;
     }
     return 0;
@@ -167,11 +183,17 @@ int sys_write_raid_impl(int blkn, uchar* data){
             write_block(VIRTIO_RAID_DISK_END, blkNum, parity_buffer);
             break;
         case RAID5:
-            diskNum = blkn % (RAID_DISK_NUMBER - 1) + 1;
+            diskNum = (blkn + blkn / RAID_DISK_NUMBER + 1) % (RAID_DISK_NUMBER) + 1;
             blkNum = blkn / (RAID_DISK_NUMBER - 1);
             if(raid_data.failed[diskNum]) return -1;
             write_block(diskNum, blkNum, data);
-
+            int parity_disk = (blkNum % RAID_DISK_NUMBER) + 1;
+            uchar temp_parity_buffer[BSIZE];
+            read_block(parity_disk, blkNum, temp_parity_buffer);
+            for(int j = 0; j < BSIZE; j++){
+                temp_parity_buffer[j] = temp_parity_buffer[j] ^ data[j];
+            }
+            write_block(parity_disk, blkNum, temp_parity_buffer);
             break;
     }
     return 0;
@@ -233,9 +255,23 @@ int sys_disk_repaired_raid_impl(int diskn){
             }
             break;
         case RAID5:
+
+            for(int i = 0; i < raid_data.numberOfBlocks / RAID_DISK_NUMBER + 1; i++) {
+                memset(parity_buffer, 0, BSIZE);
+                for (int j = 1; j < RAID_DISK_NUMBER + 1; j++) {
+                    if (diskn == j) continue;
+                    if(raid_data.failed[j]) return -1;
+                    uchar temporary_buffer[BSIZE];
+                    printf("\n%d %d\n", j, i);
+                    read_block(j, i, temporary_buffer);
+                    for (int k = 0; k < BSIZE; k++) {
+                        parity_buffer[k] = parity_buffer[k] ^ temporary_buffer[k];
+                    }
+                }
+                write_block(diskn, i, parity_buffer);
+            }
             break;
     }
-
 
     return 0;
 }
