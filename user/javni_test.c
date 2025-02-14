@@ -9,7 +9,7 @@ main(int argc, char *argv[])
 {
 //    consputc('a');
 
-  init_raid(RAID5);
+  init_raid(RAID0);
 
   uint disk_num, block_num, block_size;
   info_raid(&block_num, &block_size, &disk_num);
@@ -22,13 +22,17 @@ main(int argc, char *argv[])
       blk[j] = j + i;
     }
     write_raid(i, blk);
-
   }
     printf("PROSAO");
   check_data(blocks, blk, block_size);
     printf("PROSAO");
   disk_fail_raid(2);
     printf("PROSAO");
+
+    for (uint j = 0; j < block_size; j++) {
+        blk[j] = j;
+    }
+    //if(write_raid(1, blk) == -1) exit(-1);
   check_data(blocks, blk, block_size);
     printf("PROSAO");
   disk_repaired_raid(2);
